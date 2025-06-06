@@ -153,14 +153,16 @@
 }
         /* Цвета для разных типов занятий 
         
-        'ЛК': 'lecture',
+                'ЛК': 'lecture',
                 'ПЗ': 'practice',
                 'ЛР': 'lab',
                 'Экзамен': 'exam',
                 'Консультация': 'consultation',
                 'Организация': 'organization',
                 'Зачет': 'Test',
-                'УПз': 'Instpractice'
+                'УПз': 'Instpractice',
+                'УЛР': 'Instlab',
+                'УЛк': 'Instlecture',
         */
 .lecture { background-color: #c3d8c1; border-left: 4px solid #33db24; }
 .practice { background-color: #cdbbe9; border-left: 4px solid #8e4fec; }
@@ -169,4 +171,6 @@
 .consultation { background-color: #a7eaf5; border-left: 4px solid #4fe8ff; }
 .organization { background-color: #b184ab; border-left: 4px solid #c213ab; }
 .Test{ background-color: #f1e6a5; border-left: 4px solid #ffd900; }
-.Instpractice{ background-color: #acd6a8; border-left: 4px solid #33db24; }
+.Instpractice{ background-color: #cdbbe9; border-left: 4px solid #8e4fec; }
+.Instlab{ background-color: #f7d8c3; border-left: 4px solid #f98f43; }
+.Instlecture{ background-color: #c3d8c1; border-left: 4px solid #33db24; }
