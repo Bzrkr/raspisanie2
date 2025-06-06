@@ -131,7 +131,9 @@
                 'Консультация': 'consultation',
                 'Организация': 'organization',
                 'Зачет': 'Test',
-                'УПз': 'Instpractice'
+                'УПз': 'Instpractice',
+                'УЛР': 'Instlab',
+                'УЛк': 'Instlecture'
             };
             return typeMap[lessonType] || '';
         }
