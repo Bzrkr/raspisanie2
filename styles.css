@@ -53,6 +53,7 @@
             display: grid;
             grid-template-columns: 120px repeat(auto-fit, minmax(220px, 1fr));
             min-width: max-content;
+            background-color: #e9edf3;
         }
         
         .header-cell {
