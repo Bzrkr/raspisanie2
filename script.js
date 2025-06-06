@@ -244,8 +244,8 @@ async function updateSchedule(date, weekNumber) {
 lessonDiv.innerHTML = `
     <div class="lesson-time">${lesson.startTime}—${lesson.endTime}</div>
     <div class="lesson-content">
-        ${lesson.subject} (${lesson.type})<br>
-        ${lesson.teacher}<br>
+        ${lesson.subject} (${lesson.type})
+        ${lesson.teacher}
         ${groupsText}
     </div>
 `;
