@@ -108,6 +108,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
+            border: 1px dashed #eee;
         }
         
         .lesson-time {
