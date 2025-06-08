@@ -193,98 +193,164 @@
         }
 
         async function updateSchedule(date, weekNumber) {
-            if (!weekNumber) {
-                console.error('Не удалось определить номер недели');
-                return;
-            }
+    if (!weekNumber) {
+        console.error('Не удалось определить номер недели');
+        return;
+    }
 
-            document.getElementById('loading').style.display = 'flex';
-            try {
-                const schedulesContainer = document.getElementById('schedules');
-                schedulesContainer.innerHTML = '';
-                
-                // Добавляем пустой угол в левый верхний
-                const corner = document.createElement('div');
-                corner.className = 'header-cell';
-                corner.style.gridColumn = '1';
-                corner.style.gridRow = '1';
-                schedulesContainer.appendChild(corner);
-                
-                // Добавляем заголовки аудиторий
-                IPEauditories.forEach((auditory, index) => {
-                    const header = document.createElement('div');
-                    header.className = 'header-cell auditory-header';
-                    header.textContent = auditory;
-                    header.style.gridColumn = index + 2;
-                    header.style.gridRow = '1';
-                    schedulesContainer.appendChild(header);
-                });
-                
-                const promises = IPEauditories.map(async (auditory) => {
-                    const schedule = await getScheduleForAuditory(auditory, date, weekNumber);
-                    return { auditory, schedule };
-                });
-                
-                const results = await Promise.all(promises);
-                
-                // Добавляем строки для каждого временного интервала
-                timeSlotsOrder.forEach((timeSlot, timeIndex) => {
-                    // Заголовок временного интервала
-                    const timeHeader = document.createElement('div');
-                    timeHeader.className = 'time-cell';
-                    timeHeader.textContent = timeSlot;
-                    timeHeader.style.gridColumn = '1';
-                    timeHeader.style.gridRow = timeIndex + 2;
-                    schedulesContainer.appendChild(timeHeader);
-                    
-                    // Ячейки для каждой аудитории
-                    results.forEach((result, audIndex) => {
-                        const cell = document.createElement('div');
-                        cell.className = 'auditory-cell';
-                        cell.style.gridColumn = audIndex + 2;
-                        cell.style.gridRow = timeIndex + 2;
-                        
-                        const lessons = result.schedule[timeSlot];
-                        if (lessons && lessons.length > 0) {
-                            lessons.forEach(lesson => {
-                                const lessonDiv = document.createElement('div');
-                                const typeClass = getLessonTypeClass(lesson.type);
-                                lessonDiv.className = `lesson ${typeClass}`;
-                                
-                                const startTime = lesson.startTime.substring(0, 5);
-                                const endTime = lesson.endTime.substring(0, 5);
-                                const groupsText = lesson.groups.length > 0 
-                                    ? lesson.groups.map(g => 
-                                        `<a href="https://iis.bsuir.by/schedule/${g}" target="_blank" class="group-link">${g}</a>`
-                                      ).join(', ')
-                                    : '';
-                                
-                                lessonDiv.innerHTML = `
-                                    <div class="lesson-time">${startTime}—${endTime}</div>
-                                    <div class="lesson-subject">${lesson.subject}</div>
-                                    <div class="lesson-type">${lesson.type}</div>
-                                    ${groupsText ? `<div class="lesson-groups">${groupsText}</div>` : ''}
-                                    <div>${lesson.teacher}</div>
-                                `;
-                                cell.appendChild(lessonDiv);
-                            });
-                        } else {
-                            const noLessonDiv = document.createElement('div');
-                            noLessonDiv.className = 'lesson no-lesson';
-                            noLessonDiv.textContent = 'Занятий нет';
-                            cell.appendChild(noLessonDiv);
-                        }
-                        
-                        schedulesContainer.appendChild(cell);
-                    });
-                });
-            } catch (error) {
-                console.error('Ошибка при обновлении расписания:', error);
-                alert('Произошла ошибка при загрузке расписания');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+    try {
+        const schedulesContainer = document.getElementById('schedules');
+        schedulesContainer.innerHTML = '';
+        
+        // Добавляем пустой угол в левый верхний
+        const corner = document.createElement('div');
+        corner.className = 'header-cell';
+        corner.style.gridColumn = '1';
+        corner.style.gridRow = '1';
+        schedulesContainer.appendChild(corner);
+        
+        // Добавляем заголовки аудиторий
+        IPEauditories.forEach((auditory, index) => {
+            const header = document.createElement('div');
+            header.className = 'header-cell auditory-header';
+            header.textContent = auditory;
+            header.style.gridColumn = index + 2;
+            header.style.gridRow = '1';
+            schedulesContainer.appendChild(header);
+        });
+        
+        const promises = IPEauditories.map(async (auditory) => {
+            const schedule = await getScheduleForAuditory(auditory, date, weekNumber);
+            return { auditory, schedule };
+        });
+        
+        const results = await Promise.all(promises);
+        
+        // Получаем текущее время
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        let currentSlotIndex = -1;
+        
+        // Проверяем, совпадает ли выбранная дата с текущей
+        const isToday = date.toDateString() === new Date().toDateString();
+        
+        // Находим текущий временной интервал
+        timeSlotsOrder.forEach((timeSlot, index) => {
+            const [start, end] = timeSlot.split('—');
+            const startMinutes = convertToMinutes(start);
+            const endMinutes = convertToMinutes(end);
+            
+            if (isToday && currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+                currentSlotIndex = index;
+            }
+        });
+        
+        // Если текущее время после последнего интервала, выделяем последний
+        if (isToday && currentSlotIndex === -1) {
+            const lastSlot = timeSlotsOrder[timeSlotsOrder.length - 1];
+            const [lastStart, lastEnd] = lastSlot.split('—');
+            const lastEndMinutes = convertToMinutes(lastEnd);
+            
+            if (currentMinutes > lastEndMinutes) {
+                currentSlotIndex = timeSlotsOrder.length - 1;
             }
         }
+        
+        // Если текущее время перед первым интервалом, выделяем первый
+        if (isToday && currentSlotIndex === -1) {
+            const firstSlot = timeSlotsOrder[0];
+            const [firstStart, firstEnd] = firstSlot.split('—');
+            const firstStartMinutes = convertToMinutes(firstStart);
+            
+            if (currentMinutes < firstStartMinutes) {
+                currentSlotIndex = 0;
+            }
+        }
+        
+        // Добавляем строки для каждого временного интервала
+        timeSlotsOrder.forEach((timeSlot, timeIndex) => {
+            // Заголовок временного интервала
+            const timeHeader = document.createElement('div');
+            timeHeader.className = 'time-cell';
+            timeHeader.textContent = timeSlot;
+            timeHeader.style.gridColumn = '1';
+            timeHeader.style.gridRow = timeIndex + 2;
+            
+            // Подсвечиваем текущий временной интервал
+            if (isToday && timeIndex === currentSlotIndex) {
+                timeHeader.classList.add('current-time-slot');
+            }
+            
+            schedulesContainer.appendChild(timeHeader);
+            
+            // Ячейки для каждой аудитории
+            results.forEach((result, audIndex) => {
+                const cell = document.createElement('div');
+                cell.className = 'auditory-cell';
+                cell.style.gridColumn = audIndex + 2;
+                cell.style.gridRow = timeIndex + 2;
+                
+                // Подсвечиваем текущий временной интервал в ячейках аудиторий
+                if (isToday && timeIndex === currentSlotIndex) {
+                    cell.classList.add('current-time-slot');
+                }
+                
+                const lessons = result.schedule[timeSlot];
+                if (lessons && lessons.length > 0) {
+                    lessons.forEach(lesson => {
+                        const lessonDiv = document.createElement('div');
+                        const typeClass = getLessonTypeClass(lesson.type);
+                        lessonDiv.className = `lesson ${typeClass}`;
+                        
+                        const startTime = lesson.startTime.substring(0, 5);
+                        const endTime = lesson.endTime.substring(0, 5);
+                        const groupsText = lesson.groups.length > 0 
+                            ? lesson.groups.map(g => 
+                                `<a href="https://iis.bsuir.by/schedule/${g}" target="_blank" class="group-link">${g}</a>`
+                              ).join(', ')
+                            : '';
+                        
+                        lessonDiv.innerHTML = `
+                            <div class="lesson-time">${startTime}—${endTime}</div>
+                            <div class="lesson-subject">${lesson.subject}</div>
+                            <div class="lesson-type">${lesson.type}</div>
+                            ${groupsText ? `<div class="lesson-groups">${groupsText}</div>` : ''}
+                            <div>${lesson.teacher}</div>
+                        `;
+                        cell.appendChild(lessonDiv);
+                    });
+                } else {
+                    const noLessonDiv = document.createElement('div');
+                    noLessonDiv.className = 'lesson no-lesson';
+                    noLessonDiv.textContent = 'Занятий нет';
+                    cell.appendChild(noLessonDiv);
+                }
+                
+                schedulesContainer.appendChild(cell);
+            });
+        });
+        
+        // Если текущее время прошло текущий интервал, подсвечиваем следующий
+        if (isToday && currentSlotIndex !== -1) {
+            const [currentStart, currentEnd] = timeSlotsOrder[currentSlotIndex].split('—');
+            const currentEndMinutes = convertToMinutes(currentEnd);
+            
+            if (currentMinutes > currentEndMinutes && currentSlotIndex < timeSlotsOrder.length - 1) {
+                const nextTimeHeaders = schedulesContainer.querySelectorAll(`.time-cell:nth-child(${currentSlotIndex + 3})`);
+                const nextAuditoryCells = schedulesContainer.querySelectorAll(`.auditory-cell:nth-child(${currentSlotIndex + 3})`);
+                
+                nextTimeHeaders.forEach(el => el.classList.add('current-time-slot'));
+                nextAuditoryCells.forEach(el => el.classList.add('current-time-slot'));
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка при обновлении расписания:', error);
+        alert('Произошла ошибка при загрузке расписания');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
 
         function copyAndSend() {
             const weekDisplayText = document.getElementById('weekDisplay').innerText;
