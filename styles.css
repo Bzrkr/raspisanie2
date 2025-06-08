@@ -23,7 +23,10 @@
   animation: spin 1.5s linear infinite;
   font-size: 3em;
 }
-
+.current-time-slot {
+    background-color: #fffde7 !important; /* светло-желтый фон */
+    box-shadow: inset 0 0 0 2px #ffd600; /* желтая рамка */
+}
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
