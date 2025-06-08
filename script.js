@@ -193,9 +193,9 @@
         }
 
         async function updateSchedule(date, weekNumber) {
-    if (!weekNumber) {
-        console.error('Не удалось определить номер недели');
-        return;
+            if (!weekNumber) {
+                console.error('Не удалось определить номер недели');
+                return;
     }
 
     document.getElementById('loading').style.display = 'flex';
@@ -230,44 +230,35 @@
         // Получаем текущее время
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        // Находим текущий или следующий временной интервал
         let currentSlotIndex = -1;
-        
-        // Проверяем, совпадает ли выбранная дата с текущей
         const isToday = date.toDateString() === new Date().toDateString();
         
-        // Находим текущий временной интервал
-        timeSlotsOrder.forEach((timeSlot, index) => {
-            const [start, end] = timeSlot.split('—');
-            const startMinutes = convertToMinutes(start);
-            const endMinutes = convertToMinutes(end);
-            
-            if (isToday && currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
-                currentSlotIndex = index;
+        if (isToday) {
+            // Ищем первый интервал, который еще не начался или в котором мы находимся
+            for (let i = 0; i < timeSlotsOrder.length; i++) {
+                const [start, end] = timeSlotsOrder[i].split('—');
+                const startMinutes = convertToMinutes(start);
+                const endMinutes = convertToMinutes(end);
+                
+                // Если текущее время до начала этого интервала - это наш следующий интервал
+                if (currentMinutes < startMinutes) {
+                    currentSlotIndex = i;
+                    break;
+                }
+                // Если мы внутри этого интервала
+                if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+                    currentSlotIndex = i;
+                    break;
+                }
             }
-        });
-        
-        // Если текущее время после последнего интервала, выделяем последний
-        if (isToday && currentSlotIndex === -1) {
-            const lastSlot = timeSlotsOrder[timeSlotsOrder.length - 1];
-            const [lastStart, lastEnd] = lastSlot.split('—');
-            const lastEndMinutes = convertToMinutes(lastEnd);
             
-            if (currentMinutes > lastEndMinutes) {
+            // Если все интервалы прошли, выбираем последний
+            if (currentSlotIndex === -1) {
                 currentSlotIndex = timeSlotsOrder.length - 1;
             }
         }
-        
-        // Если текущее время перед первым интервалом, выделяем первый
-        if (isToday && currentSlotIndex === -1) {
-            const firstSlot = timeSlotsOrder[0];
-            const [firstStart, firstEnd] = firstSlot.split('—');
-            const firstStartMinutes = convertToMinutes(firstStart);
-            
-            if (currentMinutes < firstStartMinutes) {
-                currentSlotIndex = 0;
-            }
-        }
-        
+
         // Добавляем строки для каждого временного интервала
         timeSlotsOrder.forEach((timeSlot, timeIndex) => {
             // Заголовок временного интервала
@@ -277,7 +268,7 @@
             timeHeader.style.gridColumn = '1';
             timeHeader.style.gridRow = timeIndex + 2;
             
-            // Подсвечиваем текущий временной интервал
+            // Подсвечиваем текущий/следующий временной интервал
             if (isToday && timeIndex === currentSlotIndex) {
                 timeHeader.classList.add('current-time-slot');
             }
@@ -291,7 +282,7 @@
                 cell.style.gridColumn = audIndex + 2;
                 cell.style.gridRow = timeIndex + 2;
                 
-                // Подсвечиваем текущий временной интервал в ячейках аудиторий
+                // Подсвечиваем текущий/следующий временной интервал
                 if (isToday && timeIndex === currentSlotIndex) {
                     cell.classList.add('current-time-slot');
                 }
@@ -344,7 +335,7 @@
                 nextAuditoryCells.forEach(el => el.classList.add('current-time-slot'));
             }
         }
-    } catch (error) {
+   } catch (error) {
         console.error('Ошибка при обновлении расписания:', error);
         alert('Произошла ошибка при загрузке расписания');
     } finally {
